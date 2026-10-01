@@ -1,0 +1,64 @@
+name: test
+
+# Dry-runs the action on all three OSes. Set the ADO_CLIENT_ID / ADO_TENANT_ID repository
+# variables (Entra app with a federated credential for this repo) to publish for real.
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      id-token: write
+    env:
+      CAN_PUBLISH: ${{ vars.ADO_CLIENT_ID != '' && github.event_name != 'pull_request' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: TRX
+        id: trx
+        uses: ./
+        with:
+          results-dir: samples
+          pattern: '*.trx'
+          test-runner: VSTest
+          dry-run: ${{ env.CAN_PUBLISH != 'true' }}
+          collection-url: ${{ vars.ADO_COLLECTION_URL }}
+          project: ${{ vars.ADO_PROJECT }}
+          client-id: ${{ vars.ADO_CLIENT_ID }}
+          tenant-id: ${{ vars.ADO_TENANT_ID }}
+
+      - name: JUnit
+        id: junit
+        uses: ./
+        with:
+          results-dir: samples
+          pattern: 'TEST-*.xml'
+          test-runner: JUnit
+          dry-run: ${{ env.CAN_PUBLISH != 'true' }}
+          collection-url: ${{ vars.ADO_COLLECTION_URL }}
+          project: ${{ vars.ADO_PROJECT }}
+          client-id: ${{ vars.ADO_CLIENT_ID }}
+          tenant-id: ${{ vars.ADO_TENANT_ID }}
+
+      - name: Report
+        shell: bash
+        run: |
+          echo "Cold setup: ${{ steps.trx.outputs.setup-seconds }}s, warm: ${{ steps.junit.outputs.setup-seconds }}s"
+          echo "TRX run: ${{ steps.trx.outputs.run-url }}"
+          echo "JUnit run: ${{ steps.junit.outputs.run-url }}"

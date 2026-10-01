@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="ptr-junit-sample" tests="3" failures="1" errors="0" skipped="0" time="0.042">
+  <testsuite name="calculator.spec" tests="3" failures="1" errors="0" skipped="0" time="0.042" timestamp="2026-09-30T10:00:00" hostname="runner">
+    <testcase classname="calculator.spec" name="adds two numbers" time="0.010"/>
+    <testcase classname="calculator.spec" name="subtracts two numbers" time="0.012"/>
+    <testcase classname="calculator.spec" name="divides by zero" time="0.020">
+      <failure message="expected Infinity to throw" type="AssertionError">AssertionError: expected Infinity to throw
+    at Context.&lt;anonymous&gt; (test/calculator.spec.js:21:5)</failure>
+    </testcase>
+  </testsuite>
+</testsuites>

@@ -1,0 +1,42 @@
+name: 'Publish Test Results to Azure DevOps'
+description: 'Publish TRX, JUnit, NUnit, xUnit or CTest results from GitHub Actions to Azure DevOps Test Plans.'
+author: 'Azure DevOps Test Management'
+branding:
+  icon: 'check-circle'
+  color: 'blue'
+inputs:
+  results-dir:
+    description: 'Folder to search for result files.'
+    default: '.'
+  pattern:
+    description: 'File name pattern, e.g. *.trx or TEST-*.xml.'
+    default: '*.trx'
+  test-runner:
+    description: 'VSTest, JUnit, NUnit, XUnit or CTest.'
+    default: 'VSTest'
+  collection-url:
+    description: 'Azure DevOps organization URL.'
+    required: false
+  project:
+    description: 'Azure DevOps project.'
+    required: false
+  run-title:
+    description: 'Test run title.'
+    required: false
+  client-id:
+    description: 'Entra app (client) ID with a federated credential for this repo. Enables publishing.'
+    required: false
+  tenant-id:
+    description: 'Entra tenant ID.'
+    required: false
+  dry-run:
+    description: 'Parse only; do not call Azure DevOps.'
+    default: 'false'
+outputs:
+  run-url:
+    description: 'URL of the first published run.'
+  setup-seconds:
+    description: 'Seconds spent restoring the NuGet package and compiling.'
+runs:
+  using: 'node24'
+  main: 'index.js'

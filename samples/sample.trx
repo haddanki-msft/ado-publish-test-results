@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="11111111-1111-1111-1111-111111111111" name="ptr-sample" runUser="github" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-09-29T10:00:00.000+00:00" queuing="2026-09-29T10:00:00.000+00:00" start="2026-09-29T10:00:00.000+00:00" finish="2026-09-29T10:00:05.000+00:00" />
+  <Results>
+    <UnitTestResult executionId="a1" testId="t1" testName="Adds" computerName="github" duration="00:00:00.10" startTime="2026-09-29T10:00:01.000+00:00" endTime="2026-09-29T10:00:01.100+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="l1" relativeResultsDirectory="a1" />
+    <UnitTestResult executionId="a2" testId="t2" testName="Subtracts" computerName="github" duration="00:00:00.10" startTime="2026-09-29T10:00:02.000+00:00" endTime="2026-09-29T10:00:02.100+00:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="l1" relativeResultsDirectory="a2"><Output><ErrorInfo><Message>expected 1 but was 2</Message></ErrorInfo></Output></UnitTestResult>
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="Adds" id="t1"><Execution id="a1" /><TestMethod codeBase="sample.dll" className="Calc.Tests" name="Adds" /></UnitTest>
+    <UnitTest name="Subtracts" id="t2"><Execution id="a2" /><TestMethod codeBase="sample.dll" className="Calc.Tests" name="Subtracts" /></UnitTest>
+  </TestDefinitions>
+  <ResultSummary outcome="Failed"><Counters total="2" executed="2" passed="1" failed="1" /></ResultSummary>
+</TestRun>
