@@ -105,6 +105,7 @@ async function main() {
     const lines = [
       '### PTR NuGet dummy action (POC)',
       `- Runner: ${process.env.RUNNER_OS || os.platform()}-${process.env.RUNNER_ARCH || os.arch()}`,
+      `- Ta NuGet package: ${summary.taPackageVersion}`,
       `- Parsed results: ${summary.parsedResults} (${summary.runner})`,
       `- NuGet restore + compile: ${setupSeconds}s; ${dryRun ? 'parse' : 'parse + publish'}: ${runSeconds}s`,
     ];
@@ -112,6 +113,7 @@ async function main() {
       lines.push(`- ADO run [${r.Id}](${r.url}): ${r.State}, ${r.PassedTests}/${r.TotalTests} passed`);
     }
     appendFile('GITHUB_STEP_SUMMARY', lines.join(os.EOL));
+    appendFile('GITHUB_OUTPUT', `ta-package-version=${summary.taPackageVersion}`);
     if (summary.runs && summary.runs.length > 0) appendFile('GITHUB_OUTPUT', `run-url=${summary.runs[0].url}`);
   }
 

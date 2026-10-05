@@ -1,11 +1,12 @@
-// POC: .NET 10 file-based app. The Ta NuGet package is restored from nuget.org when the
-// action runs; no prebuilt zip is shipped.
+// Latest publicly installable Ta prerelease. A newer listed package is not usable because
+// its pinned BlobStore dependency has not been published.
 #:package Microsoft.TeamFoundation.PublishTestResults@20.278.1-preview
 #:property PublishAot=false
 #:property RollForward=Major
 #:property SatelliteResourceLanguages=en
 
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 using Microsoft.TeamFoundation.TestClient.PublishTestResults;
 using Microsoft.TeamFoundation.TestManagement.WebApi;
@@ -22,8 +23,14 @@ var dryRun = Env("PTR_DRY_RUN", "false").Equals("true", StringComparison.Ordinal
 var runName = Env("PTR_RUN_TITLE", $"GitHub {Env("GITHUB_REPOSITORY", "local")} run {Env("GITHUB_RUN_ID", "0")}");
 var summaryFile = Env("PTR_SUMMARY_FILE");
 var token = Env("ADO_ACCESS_TOKEN");
+var taAssembly = typeof(TestRunPublisher).Assembly;
+var taPackageVersion =
+    taAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+    ?? taAssembly.GetName().Version?.ToString()
+    ?? "unknown";
 
 var trace = new ConsoleTraceListener(useErrorStream: true);
+Console.Error.WriteLine($"[ptr] Ta package version: {taPackageVersion}");
 
 var files = Directory.Exists(resultsDir)
     ? Directory.EnumerateFiles(resultsDir, pattern, SearchOption.AllDirectories).Select(Path.GetFullPath).OrderBy(f => f, StringComparer.Ordinal).ToList()
@@ -77,7 +84,14 @@ var origin = string.Join("; ",
     $"runner={Env("RUNNER_ENVIRONMENT")}/{Env("RUNNER_OS")}-{Env("RUNNER_ARCH")}",
     $"url={server}/{repo}/actions/runs/{ghRunId}");
 
-var summary = new Dictionary<string, object?> { ["runName"] = runName, ["runner"] = runner, ["parsedResults"] = parsed, ["dryRun"] = dryRun };
+var summary = new Dictionary<string, object?>
+{
+    ["runName"] = runName,
+    ["runner"] = runner,
+    ["taPackageVersion"] = taPackageVersion,
+    ["parsedResults"] = parsed,
+    ["dryRun"] = dryRun
+};
 var exitCode = 0;
 
 if (!dryRun)

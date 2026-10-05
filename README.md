@@ -6,6 +6,17 @@ match the Azure Pipelines task.
 
 > Staging repo for the POC. The production home will be a `microsoft/` repo after OSS approval.
 
+## Latest-package POC
+
+This POC uses `Microsoft.TeamFoundation.PublishTestResults` `20.278.1-preview`, the latest
+publicly installable version on nuget.org when this POC was published. The newer listed
+`20.279.0-preview` cannot currently restore because its pinned
+`Microsoft.VisualStudio.Services.BlobStore.Client` dependency is not publicly available.
+
+The Ta version is printed in the log and exposed as the `ta-package-version` action output.
+It is pinned so the `v0.1.0` action remains reproducible; updating it requires another
+Windows, Linux, and macOS compatibility run.
+
 ## Usage
 
 ```yaml
@@ -14,7 +25,7 @@ permissions:
   contents: read
 
 steps:
-  - uses: <owner>/ado-publish-test-results@v1
+  - uses: haddanki-msft/ado-publish-test-results@v0.1.0
     with:
       results-dir: TestResults
       pattern: '*.trx'          # or TEST-*.xml with test-runner: JUnit

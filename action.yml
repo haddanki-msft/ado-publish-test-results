@@ -37,6 +37,8 @@ outputs:
     description: 'URL of the first published run.'
   setup-seconds:
     description: 'Seconds spent restoring the NuGet package and compiling.'
+  ta-package-version:
+    description: 'Ta NuGet package version resolved for this run.'
 runs:
   using: 'node24'
   main: 'index.js'

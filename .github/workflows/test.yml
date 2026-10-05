@@ -59,6 +59,7 @@ jobs:
       - name: Report
         shell: bash
         run: |
+          echo "Ta package: ${{ steps.trx.outputs.ta-package-version }}"
           echo "Cold setup: ${{ steps.trx.outputs.setup-seconds }}s, warm: ${{ steps.junit.outputs.setup-seconds }}s"
           echo "TRX run: ${{ steps.trx.outputs.run-url }}"
           echo "JUnit run: ${{ steps.junit.outputs.run-url }}"
