@@ -48,7 +48,29 @@ outputs:
 runs:
   using: 'composite'
   steps:
+    - name: Check .NET SDK
+      id: check-dotnet
+      shell: pwsh
+      run: |
+        $dotnet = Get-Command dotnet -ErrorAction SilentlyContinue
+        $sdks = @()
+        $dotnetSucceeded = $false
+        if ($null -ne $dotnet) {
+          $sdks = @(& dotnet --list-sdks)
+          $dotnetSucceeded = $LASTEXITCODE -eq 0
+        }
+
+        $hasCompatibleSdk = $dotnetSucceeded -and $null -ne ($sdks | Where-Object { $_ -match '^(?:1[0-9]|[2-9][0-9])\.' } | Select-Object -First 1)
+        $needsSetup = (-not $hasCompatibleSdk).ToString().ToLowerInvariant()
+        [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "needs-setup=$needsSetup$([Environment]::NewLine)")
+        if ($hasCompatibleSdk) {
+          Write-Host "[ptr] Using installed .NET SDK: $($sdks -join ', ')"
+        } else {
+          Write-Host '[ptr] .NET 10 or newer was not found; setup is required.'
+        }
+
     - name: Set up .NET
+      if: steps.check-dotnet.outputs.needs-setup == 'true'
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: '10.0.x'

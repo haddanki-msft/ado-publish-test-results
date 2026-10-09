@@ -40,7 +40,7 @@ steps:
 
 ## How it works
 
-1. The composite `action.yml` installs the .NET 10 SDK with `actions/setup-dotnet`.
+1. The composite `action.yml` uses an installed .NET 10-or-newer SDK, or installs .NET 10 with `actions/setup-dotnet` when needed.
 2. It restores the Ta NuGet package and compiles `publish.cs`.
 3. `publish.cs` exchanges the GitHub OIDC assertion with Entra for an Azure DevOps token.
 4. `publish.cs` parses the files with Ta and publishes a build-less test run.
@@ -49,6 +49,6 @@ steps:
 
 ## Requirements
 
-- A runner supported by `actions/setup-dotnet`; the action installs the .NET 10 SDK.
+- PowerShell 7 and either a .NET 10-or-newer SDK or a runner supported by `actions/setup-dotnet`.
 - Network access to nuget.org and to Azure DevOps.
 - An Entra app with a federated credential for your repo, added to the Azure DevOps org with Test Plans write access.
