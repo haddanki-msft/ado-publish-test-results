@@ -40,14 +40,15 @@ steps:
 
 ## How it works
 
-1. The composite `action.yml` restores the Ta NuGet package and compiles `publish.cs`.
-2. `publish.cs` exchanges the GitHub OIDC assertion with Entra for an Azure DevOps token.
-3. `publish.cs` parses the files with Ta and publishes a build-less test run.
-4. The run is marked with `TestRunSystem=GitHubActions` and a `source=GitHubActions; repo=...; runId=...` comment.
-5. The run link is written to the job summary and to the `run-url` output.
+1. The composite `action.yml` installs the .NET 10 SDK with `actions/setup-dotnet`.
+2. It restores the Ta NuGet package and compiles `publish.cs`.
+3. `publish.cs` exchanges the GitHub OIDC assertion with Entra for an Azure DevOps token.
+4. `publish.cs` parses the files with Ta and publishes a build-less test run.
+5. The run is marked with `TestRunSystem=GitHubActions` and a `source=GitHubActions; repo=...; runId=...` comment.
+6. The run link is written to the job summary and to the `run-url` output.
 
 ## Requirements
 
-- .NET 10 SDK on the runner (preinstalled on GitHub-hosted runners).
+- A runner supported by `actions/setup-dotnet`; the action installs the .NET 10 SDK.
 - Network access to nuget.org and to Azure DevOps.
 - An Entra app with a federated credential for your repo, added to the Azure DevOps org with Test Plans write access.
