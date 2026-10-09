@@ -29,16 +29,100 @@ inputs:
   tenant-id:
     description: 'Entra tenant ID.'
     required: false
+  ta-package-version:
+    description: 'Microsoft.TeamFoundation.PublishTestResults NuGet version.'
+    default: '20.278.1-preview'
   dry-run:
     description: 'Parse only; do not call Azure DevOps.'
     default: 'false'
 outputs:
   run-url:
     description: 'URL of the first published run.'
+    value: ${{ steps.publish.outputs.run-url }}
   setup-seconds:
     description: 'Seconds spent restoring the NuGet package and compiling.'
+    value: ${{ steps.publish.outputs.setup-seconds }}
   ta-package-version:
     description: 'Ta NuGet package version resolved for this run.'
+    value: ${{ steps.publish.outputs.ta-package-version }}
 runs:
-  using: 'node24'
-  main: 'index.js'
+  using: 'composite'
+  steps:
+    - name: Restore and compile publisher
+      id: setup
+      shell: pwsh
+      env:
+        PTR_ACTION_PATH: ${{ github.action_path }}
+        PTR_TA_PACKAGE_VERSION: ${{ inputs.ta-package-version }}
+        ACTIONS_ID_TOKEN_REQUEST_URL: ''
+        ACTIONS_ID_TOKEN_REQUEST_TOKEN: ''
+        DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+        DOTNET_NOLOGO: '1'
+      run: |
+        $ErrorActionPreference = 'Stop'
+        $versionPattern = '^\d+(?:\.\d+){1,3}(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?(?:\+[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?$'
+        $packageVersion = $env:PTR_TA_PACKAGE_VERSION.Trim()
+        if ($packageVersion -notmatch $versionPattern) {
+          throw "Invalid ta-package-version '$packageVersion'. Use a concrete NuGet version such as '20.278.1-preview'."
+        }
+
+        $sdks = @(& dotnet --list-sdks)
+        if ($LASTEXITCODE -ne 0 -or -not ($sdks | Where-Object { $_ -match '^(?:1[0-9]|[2-9][0-9])\.' })) {
+          throw ".NET 10 SDK or newer is required. Found: $($sdks -join '; ')"
+        }
+        Write-Host "[ptr] .NET SDKs: $($sdks -join ', ')"
+
+        $sourcePath = Join-Path $env:PTR_ACTION_PATH 'publish.cs'
+        $source = [IO.File]::ReadAllText($sourcePath)
+        $directivePattern = '(?m)^#:package Microsoft\.TeamFoundation\.PublishTestResults@[^\r\n]+'
+        if ([regex]::Matches($source, $directivePattern).Count -ne 1) {
+          throw 'Expected exactly one Ta package directive in publish.cs.'
+        }
+
+        $configuredSource = [regex]::Replace(
+          $source,
+          $directivePattern,
+          "#:package Microsoft.TeamFoundation.PublishTestResults@$packageVersion")
+        $workDirectory = Join-Path $env:RUNNER_TEMP "ado-publish-test-results/$packageVersion"
+        $scriptPath = Join-Path $workDirectory 'publish.cs'
+        [IO.Directory]::CreateDirectory($workDirectory) | Out-Null
+        [IO.File]::WriteAllText($scriptPath, $configuredSource, [Text.UTF8Encoding]::new($false))
+
+        Write-Host "[ptr] Requested Ta package version: $packageVersion"
+        $stopwatch = [Diagnostics.Stopwatch]::StartNew()
+        & dotnet build $scriptPath
+        $buildExitCode = $LASTEXITCODE
+        $stopwatch.Stop()
+        $setupSeconds = $stopwatch.Elapsed.TotalSeconds.ToString('F1', [Globalization.CultureInfo]::InvariantCulture)
+        Write-Host "[ptr] NuGet restore + compile took ${setupSeconds}s"
+        if ($buildExitCode -ne 0) {
+          throw "dotnet build failed with exit code $buildExitCode."
+        }
+
+        [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "script-path=$scriptPath$([Environment]::NewLine)")
+        [IO.File]::AppendAllText($env:GITHUB_OUTPUT, "setup-seconds=$setupSeconds$([Environment]::NewLine)")
+
+    - name: Publish test results
+      id: publish
+      shell: pwsh
+      env:
+        PTR_SCRIPT_PATH: ${{ steps.setup.outputs.script-path }}
+        PTR_SETUP_SECONDS: ${{ steps.setup.outputs.setup-seconds }}
+        PTR_RESULTS_DIR: ${{ inputs.results-dir }}
+        PTR_PATTERN: ${{ inputs.pattern }}
+        PTR_TEST_RUNNER: ${{ inputs.test-runner }}
+        PTR_COLLECTION_URL: ${{ inputs.collection-url }}
+        PTR_PROJECT: ${{ inputs.project }}
+        PTR_RUN_TITLE: ${{ inputs.run-title }}
+        PTR_CLIENT_ID: ${{ inputs.client-id }}
+        PTR_TENANT_ID: ${{ inputs.tenant-id }}
+        PTR_DRY_RUN: ${{ inputs.dry-run }}
+        DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+        DOTNET_NOLOGO: '1'
+      run: |
+        & dotnet run --no-build $env:PTR_SCRIPT_PATH
+        $publisherExitCode = $LASTEXITCODE
+        if ($publisherExitCode -eq 2) {
+          exit 0
+        }
+        exit $publisherExitCode

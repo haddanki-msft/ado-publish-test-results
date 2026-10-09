@@ -8,14 +8,15 @@ match the Azure Pipelines task.
 
 ## Latest-package POC
 
-This POC uses `Microsoft.TeamFoundation.PublishTestResults` `20.278.1-preview`, the latest
+This POC defaults to `Microsoft.TeamFoundation.PublishTestResults` `20.278.1-preview`, the latest
 publicly installable version on nuget.org when this POC was published. The newer listed
 `20.279.0-preview` cannot currently restore because its pinned
 `Microsoft.VisualStudio.Services.BlobStore.Client` dependency is not publicly available.
 
-The Ta version is printed in the log and exposed as the `ta-package-version` action output.
-It is pinned so the `v0.1.0` action remains reproducible; updating it requires another
-Windows, Linux, and macOS compatibility run.
+The default is pinned so action runs remain reproducible. Consumers can test a newer concrete
+version with the `ta-package-version` input. The resolved assembly version is printed in the log
+and exposed as the `ta-package-version` action output. Update the action's default only after the
+new version passes Windows, Linux, and macOS compatibility runs.
 
 ## Usage
 
@@ -34,12 +35,13 @@ steps:
       project: <project>
       client-id: <entra-app-client-id>
       tenant-id: <entra-tenant-id>
+      ta-package-version: 20.278.1-preview # optional; defaults to latest validated version
 ```
 
 ## How it works
 
-1. `index.js` gets an Azure DevOps token (GitHub OIDC exchanged with Entra).
-2. It runs `dotnet build publish.cs` and then `dotnet run publish.cs`. .NET restores the Ta NuGet package.
+1. The composite `action.yml` restores the Ta NuGet package and compiles `publish.cs`.
+2. `publish.cs` exchanges the GitHub OIDC assertion with Entra for an Azure DevOps token.
 3. `publish.cs` parses the files with Ta and publishes a build-less test run.
 4. The run is marked with `TestRunSystem=GitHubActions` and a `source=GitHubActions; repo=...; runId=...` comment.
 5. The run link is written to the job summary and to the `run-url` output.
