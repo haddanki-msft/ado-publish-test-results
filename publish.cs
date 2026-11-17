@@ -121,11 +121,8 @@ async Task<int> RunAsync()
         }
 
         var client = connection.GetClient<TestManagementHttpClient>();
-        var origin = BuildOrigin();
         foreach (var run in runs)
         {
-            // RunCreateModel.Comment is read-only in Ta, so stamp the GitHub identity after creation.
-            await client.UpdateTestRunAsync(new RunUpdateModel(comment: origin), project, run.Id);
             var published = await client.GetTestRunByIdAsync(project, run.Id);
             var url = $"{collectionUrl!.AbsoluteUri.TrimEnd('/')}/{Uri.EscapeDataString(project)}/_testManagement/runs?runId={published.Id}&_a=runCharts";
             publishedRuns.Add(new PublishedRun(
@@ -276,25 +273,6 @@ Uri ValidateCollectionUrl(string value)
         throw new ArgumentException("collection-url host must be dev.azure.com or <organization>.visualstudio.com.");
     }
     return uri;
-}
-
-string BuildOrigin()
-{
-    var server = Env("GITHUB_SERVER_URL", "https://github.com");
-    var repo = Env("GITHUB_REPOSITORY", "local");
-    var runId = Env("GITHUB_RUN_ID", "0");
-    return string.Join("; ",
-        "source=GitHubActions",
-        $"repo={repo}",
-        $"workflow={Env("GITHUB_WORKFLOW")}",
-        $"job={Env("GITHUB_JOB")}",
-        $"runId={runId}",
-        $"attempt={Env("GITHUB_RUN_ATTEMPT", "1")}",
-        $"ref={Env("GITHUB_REF")}",
-        $"sha={Env("GITHUB_SHA")}",
-        $"event={Env("GITHUB_EVENT_NAME")}",
-        $"runner={Env("RUNNER_ENVIRONMENT")}/{Env("RUNNER_OS")}-{Env("RUNNER_ARCH")}",
-        $"url={server}/{repo}/actions/runs/{runId}");
 }
 
 void WriteSummary(
