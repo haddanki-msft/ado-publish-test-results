@@ -44,7 +44,7 @@ steps:
 2. It restores the Ta NuGet package and compiles `publish.cs`.
 3. `publish.cs` exchanges the GitHub OIDC assertion with Entra for an Azure DevOps token.
 4. `publish.cs` parses the files with Ta and publishes a build-less test run.
-5. The run is marked with `TestRunSystem=GitHubActions` and a `source=GitHubActions; repo=...; runId=...` comment.
+5. The run is marked with `TestRunSystem=GitHubActions`.
 6. The run link is written to the job summary and to the `run-url` output.
 
 ## Requirements
